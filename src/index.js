@@ -101,6 +101,21 @@ function performUnitOfWork(fiber) {
 
  }
 
+ if(fiber.child){
+   return fiber.child
+ }
+ let nextFiber = fiber
+ while(nextFiber){
+   if(newFiber.sibling){
+     return nextFiber.sibling
+   }else{
+     nextFiber = nextFiber.parent
+   }
+ }
+
+  
+
+
 }
 
 
