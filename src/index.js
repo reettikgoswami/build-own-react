@@ -1,3 +1,5 @@
+import "./style.css";
+
 function createElement(type, props, ...children) {
   return {
     type,
@@ -305,12 +307,16 @@ const demoReact = {
 /** @jsx demoReact.createElement */
 
 function Counter() {
-  const [state, setState] = demoReact.useState(1)
+  const [state, setState] = demoReact.useState(0)
   return (
-    <div>
+    <div className="container">
+    <h1>{state}</h1>
     <button onClick={() => setState(c => c + 1)}>  
     increment </button>
-    <h1>Count: {state}</h1>
+    <button onClick={() => setState(c => c - 1)}>  
+    decrement </button>
+    <button onClick={() => setState(c =>  0 )}>  
+    reset</button>    
     </div> 
   )
 }
