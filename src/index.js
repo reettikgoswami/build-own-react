@@ -103,29 +103,23 @@ function updateDom(dom, prevProps, nextProps) {
 
 function commitWork(fiber) {
   if (!fiber) {
-    return
+    return;
   }
-  let domParentFiber = fiber.parent
+
+  let domParentFiber = fiber.parent;
   while (!domParentFiber.dom) {
-    domParentFiber = domParentFiber.parent
+    domParentFiber = domParentFiber.parent;
   }
-  if (
-    fiber.effectTag === "PLACEMENT" &&
-    fiber.dom != null
-  ) {
-    domParent.appendChild(fiber.dom)
-  } else if (
-    fiber.effectTag === "UPDATE" &&
-    fiber.dom != null
-  ) {
-    updateDom(
-      fiber.dom,
-      fiber.alternate.props,
-      fiber.props
-    )
+  const domParent = domParentFiber.dom;
+
+  if (fiber.effectTag === "PLACEMENT" && fiber.dom != null) {
+    domParent.appendChild(fiber.dom);
+  } else if (fiber.effectTag === "UPDATE" && fiber.dom != null) {
+    updateDom(fiber.dom, fiber.alternate.props, fiber.props);
   } else if (fiber.effectTag === "DELETION") {
     commitDeletion(fiber, domParent);
-  }​
+  }
+
   commitWork(fiber.child);
   commitWork(fiber.sibling);
 }
@@ -175,30 +169,67 @@ function workLoop(deadline) {
 
 requestIdleCallback(workLoop)
 
-
 function performUnitOfWork(fiber) {
-  const isFunctionComponent =
-    fiber.type instanceof Function
+  const isFunctionComponent = fiber.type instanceof Function;
   if (isFunctionComponent) {
-    updateFunctionComponent(fiber)
+    updateFunctionComponent(fiber);
   } else {
-    updateHostComponent(fiber)
+    updateHostComponent(fiber);
   }
   if (fiber.child) {
-    return fiber.child
+    return fiber.child;
   }
-  let nextFiber = fiber
+  let nextFiber = fiber;
   while (nextFiber) {
     if (nextFiber.sibling) {
-      return nextFiber.sibling
+      return nextFiber.sibling;
     }
-    nextFiber = nextFiber.parent
+    nextFiber = nextFiber.parent;
   }
-}​
+}
+
+
+let wipFiber = null;
+let hookIndex = null;
+
 function updateFunctionComponent(fiber) {
-  const children = [fiber.type(fiber.props)]
-  reconcileChildren(fiber, children)
-}​
+  wipFiber = fiber;
+  hookIndex = 0;
+  wipFiber.hooks = [];
+  const children = [fiber.type(fiber.props)];
+  reconcileChildren(fiber, children);
+}
+
+function useState(initial) {
+  const oldHook =
+    wipFiber.alternate &&
+    wipFiber.alternate.hooks &&
+    wipFiber.alternate.hooks[hookIndex];
+  const hook = {
+    state: oldHook ? oldHook.state : initial,
+    queue: []
+  };
+
+  const actions = oldHook ? oldHook.queue : [];
+  actions.forEach(action => {
+    hook.state = action(hook.state);
+  });
+      const setState = action => {
+      hook.queue.push(action)
+      wipRoot = {
+        dom: currentRoot.dom,
+        props: currentRoot.props,
+        alternate: currentRoot,
+      }
+      nextUnitOfWork = wipRoot
+      deletions = []
+    }
+
+    wipFiber.hooks.push(hook)
+    hookIndex++
+    return [hook.state, setState]
+}
+
 function updateHostComponent(fiber) {
   if (!fiber.dom) {
     fiber.dom = createDom(fiber)
@@ -266,17 +297,25 @@ function reconcileChildren(wipFiber, elements) {
 
 const demoReact = {
   createElement,
-  render
+  render,
+  useState,
 }
 
 
 /** @jsx demoReact.createElement */
 
-function App(props) {
-  return <h1> hi {props.name} </h1>
+function Counter() {
+  const [state, setState] = demoReact.useState(1)
+  return (
+    <div>
+    <button onClick={() => setState(c => c + 1)}>  
+    increment </button>
+    <h1>Count: {state}</h1>
+    </div> 
+  )
 }
 
-const element = < App name = "foo" / >
+const element = <Counter />
 
   {/* // const element = (
   //   <span>
